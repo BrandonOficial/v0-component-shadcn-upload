@@ -7,10 +7,9 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 export interface FileUploadProps {
-  onFileSelect?: (file: File | null) => void
+  onFileSelect?: (files: File[]) => void
   onUpload?: () => void
   onReset?: () => void
-  onClose?: () => void
   maxSize?: number // in MB
   acceptedFormats?: string[]
   isLoading?: boolean
@@ -20,13 +19,12 @@ export function FileUpload({
   onFileSelect,
   onUpload,
   onReset,
-  onClose,
   maxSize = 25,
   acceptedFormats = ["PNG", "JPG", "PDF", "MP4"],
   isLoading = false,
 }: FileUploadProps) {
   const [isDragging, setIsDragging] = useState(false)
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [error, setError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -58,24 +56,38 @@ export function FileUpload({
   )
 
   const handleSelect = useCallback(
-    (file: File) => {
-      const validationError = validateFile(file)
+    (files: FileList) => {
+      const newFiles: File[] = []
+      let validationError: string | null = null
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i]
+        const error = validateFile(file)
+        if (error) {
+          validationError = error
+          break
+        }
+        newFiles.push(file)
+      }
+
       if (validationError) {
         setError(validationError)
-        setSelectedFile(null)
-        onFileSelect?.(null)
         return
       }
+
       setError(null)
-      setSelectedFile(file)
-      onFileSelect?.(file)
+      setSelectedFiles((prev) => {
+        const updated = [...prev, ...newFiles]
+        onFileSelect?.(updated)
+        return updated
+      })
     },
     [validateFile, onFileSelect],
   )
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) handleSelect(file)
+    const files = e.target.files
+    if (files && files.length > 0) handleSelect(files)
   }
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -91,16 +103,24 @@ export function FileUpload({
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     setIsDragging(false)
-    const file = e.dataTransfer.files?.[0]
-    if (file) handleSelect(file)
+    const files = e.dataTransfer.files
+    if (files && files.length > 0) handleSelect(files)
   }
 
   const handleReset = () => {
-    setSelectedFile(null)
+    setSelectedFiles([])
     setError(null)
     if (inputRef.current) inputRef.current.value = ""
     onReset?.()
-    onFileSelect?.(null)
+    onFileSelect?.([])
+  }
+
+  const removeFile = (index: number) => {
+    setSelectedFiles((prev) => {
+      const updated = prev.filter((_, i) => i !== index)
+      onFileSelect?.(updated)
+      return updated
+    })
   }
 
   const formatFileSize = (bytes: number) => {
@@ -111,22 +131,11 @@ export function FileUpload({
 
   return (
     <Card className="w-full max-w-md shadow-sm">
-      <CardHeader className="relative flex flex-row items-start justify-between gap-4 pb-3">
-        <div className="flex flex-col gap-0.5">
-          <h2 className="text-base font-semibold leading-tight text-foreground">
-            Upload File
-          </h2>
-          <p className="text-sm text-muted-foreground">Polish, perfect and enhance</p>
-        </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute top-4 right-4 h-7 w-7 rounded-full text-muted-foreground hover:text-foreground"
-          onClick={onClose}
-          aria-label="Fechar"
-        >
-          <X className="h-4 w-4" />
-        </Button>
+      <CardHeader className="flex flex-col gap-0.5 pb-3">
+        <h2 className="text-base font-semibold leading-tight text-foreground">
+          Upload File
+        </h2>
+        <p className="text-sm text-muted-foreground">Polish, perfect and enhance</p>
       </CardHeader>
 
       <CardContent className="flex flex-col gap-4">
@@ -145,13 +154,14 @@ export function FileUpload({
             isDragging
               ? "border-primary/50 bg-muted/70"
               : "hover:border-muted-foreground/40 hover:bg-muted/50",
-            selectedFile && !error && "border-primary/40 bg-muted/30",
+            selectedFiles.length > 0 && !error && "border-primary/40 bg-muted/30",
           )}
         >
           <input
             ref={inputRef}
             type="file"
             accept={acceptAttribute}
+            multiple
             onChange={handleInputChange}
             className="sr-only"
             aria-hidden="true"
@@ -166,26 +176,47 @@ export function FileUpload({
             strokeWidth={1.5}
           />
 
-          {selectedFile ? (
-            <div className="flex flex-col items-center gap-1">
-              <p className="max-w-[220px] truncate text-sm font-medium text-foreground">
-                {selectedFile.name}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {formatFileSize(selectedFile.size)}
-              </p>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center gap-1">
-              <p className="text-sm font-medium text-foreground">
-                Drag your file here
-              </p>
-              <p className="text-xs text-muted-foreground">
-                or click to browse
-              </p>
-            </div>
-          )}
+          <div className="flex flex-col items-center gap-1">
+            <p className="text-sm font-medium text-foreground">
+              {selectedFiles.length > 0
+                ? `${selectedFiles.length} arquivo${selectedFiles.length > 1 ? "s" : ""} selecionado${selectedFiles.length > 1 ? "s" : ""}`
+                : "Drag your files here"}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              or click to browse
+            </p>
+          </div>
         </div>
+
+        {/* Selected Files List */}
+        {selectedFiles.length > 0 && (
+          <div className="flex flex-col gap-2 rounded-lg border border-border bg-muted/30 p-3">
+            {selectedFiles.map((file, index) => (
+              <div
+                key={`${file.name}-${index}`}
+                className="flex items-center justify-between gap-2 rounded-md bg-background px-3 py-2"
+              >
+                <div className="flex min-w-0 flex-col gap-0.5">
+                  <p className="truncate text-sm font-medium text-foreground">
+                    {file.name}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatFileSize(file.size)}
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 flex-shrink-0 text-muted-foreground hover:text-destructive"
+                  onClick={() => removeFile(index)}
+                  aria-label={`Remover ${file.name}`}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Validation error */}
         {error && (
@@ -224,7 +255,7 @@ export function FileUpload({
         </Button>
         <Button
           onClick={onUpload}
-          disabled={!selectedFile || !!error || isLoading}
+          disabled={selectedFiles.length === 0 || !!error || isLoading}
           className="gap-2"
         >
           {isLoading ? (
@@ -235,7 +266,7 @@ export function FileUpload({
           ) : (
             <>
               <Upload className="h-4 w-4" />
-              Upload
+              Upload {selectedFiles.length > 0 && `(${selectedFiles.length})`}
             </>
           )}
         </Button>
