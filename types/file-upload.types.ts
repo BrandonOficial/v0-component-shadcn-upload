@@ -12,7 +12,7 @@ export interface FileUploadConfig {
   acceptedFormats: SupportedFileFormat[]
 }
 
-// OLHA A MÁGICA AQUI: Estendendo os atributos de Div nativa
+// Estendendo os atributos de Div nativa
 export interface FileUploadProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "onDrop"> {
   onFileSelect?: (files: File[]) => void
   onUpload?: () => void
