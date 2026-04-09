@@ -1,32 +1,6 @@
-# 📤 File Upload Component - shadcn/ui
-
-Sistema completo de upload de arquivos com drag-and-drop, suporte a múltiplos arquivos, validação e interface moderna construída com Next.js 16 e shadcn/ui.
+# v0-component-shadcn-upload
 
 This is a [Next.js](https://nextjs.org) project bootstrapped with [v0](https://v0.app).
-
-## ✨ Features
-
-- ✅ Upload de múltiplos arquivos simultaneamente
-- ✅ Drag-and-drop intuitivo
-- ✅ Validação de formato e tamanho
-- ✅ Preview da lista de arquivos selecionados
-- ✅ Remoção individual de arquivos
-- ✅ Estados de loading e erro
-- ✅ Totalmente acessível (ARIA, teclado)
-- ✅ Responsivo e mobile-friendly
-- ✅ Arquitetura SOLID e Clean Code
-
-## 🏗️ Arquitetura
-
-O projeto segue os princípios **SOLID** e **Clean Code**:
-
-- **Single Responsibility**: Cada módulo tem uma responsabilidade única
-- **Open/Closed**: Extensível via props sem modificar código
-- **Liskov Substitution**: Interfaces bem definidas
-- **Interface Segregation**: Interfaces específicas para cada necessidade
-- **Dependency Inversion**: Dependências de abstrações
-
-Veja mais detalhes em [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
 
 ## Built with v0
 
@@ -34,59 +8,21 @@ This repository is linked to a [v0](https://v0.app) project. You can continue de
 
 [Continue working on v0 →](https://v0.app/chat/projects/prj_MtauhKWJU00DjTYsncHWFEwHQ0oc)
 
-## 🚀 Getting Started
+## Getting Started
 
-### Instalação
+First, run the development server:
 
 ```bash
-# Instalar dependências
-pnpm install
-
-# Rodar servidor de desenvolvimento
+npm run dev
+# or
+yarn dev
+# or
 pnpm dev
 ```
 
-Abra [http://localhost:3000](http://localhost:3000) no navegador.
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-### Uso Básico
-
-```tsx
-import { FileUpload } from "@/components/file-upload"
-
-export default function MyPage() {
-  const [files, setFiles] = useState<File[]>([])
-
-  const handleUpload = async () => {
-    // Implementar lógica de upload
-    console.log("Uploading:", files)
-  }
-
-  return (
-    <FileUpload
-      onFileSelect={setFiles}
-      onUpload={handleUpload}
-      maxSize={25}
-      acceptedFormats={["PNG", "JPG", "PDF"]}
-    />
-  )
-}
-```
-
-## 📂 Estrutura do Projeto
-
-```
-├── app/                  # Next.js App Router
-├── components/           # Componentes React
-│   └── file-upload.tsx  # Componente principal
-├── hooks/                # Custom React Hooks
-│   └── use-file-upload.ts
-├── lib/                  # Utilitários
-│   ├── file-validation.ts
-│   ├── file-formatting.ts
-│   └── file-mime-types.ts
-├── types/                # TypeScript types
-└── constants/            # Constantes
-```
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 ## Learn More
 
