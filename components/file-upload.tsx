@@ -4,27 +4,30 @@ import { CloudUpload, X, RotateCcw, Upload } from "lucide-react"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { useFileUpload } from "@/hooks/use-file-upload"
-import { formatFileSize, formatAcceptAttribute } from "@/lib/file-formatting"
 import type { FileUploadProps } from "@/types/file-upload.types"
+import { useFileUpload } from "@/hooks/use-file-upload"
+import { formatFileSize, getFileCountMessage } from "@/lib/file-formatting"
+import { getAcceptAttribute } from "@/lib/file-mime-types"
+import {
+  DEFAULT_MAX_FILE_SIZE_MB,
+  DEFAULT_ACCEPTED_FORMATS,
+} from "@/constants/file-upload.constants"
 
 /**
- * Componente de upload de arquivos com drag-and-drop
+ * Componente de upload de arquivos com suporte a drag-and-drop e múltiplos arquivos
  * 
- * Features:
- * - Suporte a múltiplos arquivos
- * - Drag-and-drop intuitivo
- * - Validação de formato e tamanho
- * - Estados de loading e erro
- * - Totalmente acessível
+ * Princípios aplicados:
+ * - Single Responsibility: Apenas renderiza a UI, lógica está no hook
+ * - Open/Closed: Extensível via props sem modificar o código
+ * - Dependency Inversion: Depende de abstrações (props/hooks) não de implementações
  * 
  * @example
  * ```tsx
  * <FileUpload
  *   onFileSelect={(files) => console.log(files)}
- *   onUpload={() => handleUpload()}
- *   maxSize={25}
- *   acceptedFormats={["PNG", "JPG", "PDF"]}
+ *   onUpload={handleUpload}
+ *   maxSize={50}
+ *   acceptedFormats={["PNG", "JPG"]}
  * />
  * ```
  */
@@ -32,8 +35,8 @@ export function FileUpload({
   onFileSelect,
   onUpload,
   onReset,
-  maxSize,
-  acceptedFormats,
+  maxSize = DEFAULT_MAX_FILE_SIZE_MB,
+  acceptedFormats = DEFAULT_ACCEPTED_FORMATS,
   isLoading = false,
 }: FileUploadProps) {
   const {
@@ -41,8 +44,6 @@ export function FileUpload({
     error,
     isDragging,
     inputRef,
-    maxSize: configuredMaxSize,
-    acceptedFormats: configuredFormats,
     removeFile,
     reset,
     handleInputChange,
@@ -55,15 +56,22 @@ export function FileUpload({
     config: { maxSize, acceptedFormats },
   })
 
+  const acceptAttribute = getAcceptAttribute(acceptedFormats)
+  const hasFiles = selectedFiles.length > 0
+  const hasError = !!error
+  const isUploadDisabled = !hasFiles || hasError || isLoading
+
+  /**
+   * Handler combinado de reset que notifica componente pai
+   */
   const handleReset = () => {
     reset()
     onReset?.()
   }
 
-  const acceptAttribute = formatAcceptAttribute(configuredFormats)
-
   return (
     <Card className="w-full max-w-md shadow-sm">
+      {/* Header */}
       <CardHeader className="flex flex-col gap-0.5 pb-3">
         <h2 className="text-base font-semibold leading-tight text-foreground">
           Upload File
@@ -72,11 +80,11 @@ export function FileUpload({
       </CardHeader>
 
       <CardContent className="flex flex-col gap-4">
-        {/* Dropzone */}
+        {/* Dropzone - Área de drag and drop e seleção de arquivos */}
         <div
           role="button"
           tabIndex={0}
-          aria-label="Área de upload. Arraste arquivos ou clique para selecionar."
+          aria-label="Área de upload. Arraste um arquivo ou clique para selecionar."
           onClick={openFileSelector}
           onKeyDown={(e) => e.key === "Enter" && openFileSelector()}
           onDragOver={handleDragOver}
@@ -87,7 +95,7 @@ export function FileUpload({
             isDragging
               ? "border-primary/50 bg-muted/70"
               : "hover:border-muted-foreground/40 hover:bg-muted/50",
-            selectedFiles.length > 0 && !error && "border-primary/40 bg-muted/30",
+            hasFiles && !hasError && "border-primary/40 bg-muted/30",
           )}
         >
           <input
@@ -107,13 +115,12 @@ export function FileUpload({
               isDragging ? "text-primary" : "text-muted-foreground",
             )}
             strokeWidth={1.5}
+            aria-hidden="true"
           />
 
           <div className="flex flex-col items-center gap-1">
             <p className="text-sm font-medium text-foreground">
-              {selectedFiles.length > 0
-                ? `${selectedFiles.length} arquivo${selectedFiles.length > 1 ? "s" : ""} selecionado${selectedFiles.length > 1 ? "s" : ""}`
-                : "Drag your files here"}
+              {getFileCountMessage(selectedFiles.length)}
             </p>
             <p className="text-xs text-muted-foreground">
               or click to browse
@@ -121,8 +128,8 @@ export function FileUpload({
           </div>
         </div>
 
-        {/* Selected Files List */}
-        {selectedFiles.length > 0 && (
+        {/* Lista de arquivos selecionados */}
+        {hasFiles && (
           <div className="flex flex-col gap-2 rounded-lg border border-border bg-muted/30 p-3">
             {selectedFiles.map((file, index) => (
               <div
@@ -151,21 +158,21 @@ export function FileUpload({
           </div>
         )}
 
-        {/* Validation error */}
-        {error && (
+        {/* Mensagem de erro de validação */}
+        {hasError && (
           <p className="text-xs font-medium text-destructive" role="alert">
             {error}
           </p>
         )}
 
-        {/* Info */}
+        {/* Informações sobre restrições de upload */}
         <div className="flex flex-col gap-1">
           <p className="text-sm text-muted-foreground">
             <span className="font-medium text-foreground">Supported formats:</span>{" "}
-            {configuredFormats.map((fmt, i) => (
-              <span key={fmt}>
-                <span className="text-primary">{fmt}</span>
-                {i < configuredFormats.length - 1 && (
+            {acceptedFormats.map((format, index) => (
+              <span key={format}>
+                <span className="text-primary">{format}</span>
+                {index < acceptedFormats.length - 1 && (
                   <span className="text-muted-foreground">, </span>
                 )}
               </span>
@@ -173,35 +180,41 @@ export function FileUpload({
           </p>
           <p className="text-sm text-muted-foreground">
             <span className="font-medium text-foreground">Maximum Size:</span>{" "}
-            <span className="text-primary">{configuredMaxSize}MB</span>
+            <span className="text-primary">{maxSize}MB</span>
           </p>
         </div>
       </CardContent>
 
+      {/* Footer com ações */}
       <CardFooter className="flex items-center justify-between pt-2">
         <Button
           variant="ghost"
           onClick={handleReset}
           disabled={isLoading}
           className="gap-2 text-muted-foreground hover:text-foreground"
+          aria-label="Resetar seleção de arquivos"
         >
           <RotateCcw className="h-4 w-4" />
           Reset
         </Button>
         <Button
           onClick={onUpload}
-          disabled={selectedFiles.length === 0 || !!error || isLoading}
+          disabled={isUploadDisabled}
           className="gap-2"
+          aria-label={`Fazer upload de ${selectedFiles.length} arquivo(s)`}
         >
           {isLoading ? (
             <>
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              <span 
+                className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+                aria-hidden="true"
+              />
               Uploading...
             </>
           ) : (
             <>
               <Upload className="h-4 w-4" />
-              Upload {selectedFiles.length > 0 && `(${selectedFiles.length})`}
+              Upload {hasFiles && `(${selectedFiles.length})`}
             </>
           )}
         </Button>

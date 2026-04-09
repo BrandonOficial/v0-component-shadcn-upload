@@ -1,4 +1,5 @@
 import { BYTES_PER_KB, BYTES_PER_MB } from "@/constants/file-upload.constants"
+import { getAcceptedMimeTypes } from "@/lib/file-mime-types"
 
 /**
  * Formata tamanho de arquivo em bytes para formato legível
@@ -26,4 +27,13 @@ export function getFileCountMessage(count: number): string {
   if (count === 0) return "Drag your files here"
   if (count === 1) return "1 arquivo selecionado"
   return `${count} arquivos selecionados`
+}
+
+/**
+ * Formata array de formatos aceitos para o atributo accept do input
+ * @param formats - Array de formatos (ex: ["PNG", "JPG", "PDF"])
+ * @returns String de MIME types separados por vírgula
+ */
+export function formatAcceptAttribute(formats: string[]): string {
+  return getAcceptedMimeTypes(formats).join(",")
 }
