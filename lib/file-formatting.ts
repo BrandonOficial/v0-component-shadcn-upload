@@ -1,5 +1,6 @@
 import { BYTES_PER_KB, BYTES_PER_MB } from "@/constants/file-upload.constants"
-import { getAcceptedMimeTypes } from "@/lib/file-mime-types"
+import { getAcceptAttribute } from "@/lib/file-mime-types"
+import type { SupportedFileFormat } from "@/types/file-upload.types"
 
 /**
  * Formata tamanho de arquivo em bytes para formato legível
@@ -35,5 +36,5 @@ export function getFileCountMessage(count: number): string {
  * @returns String de MIME types separados por vírgula
  */
 export function formatAcceptAttribute(formats: string[]): string {
-  return getAcceptedMimeTypes(formats).join(",")
+  return getAcceptAttribute(formats as SupportedFileFormat[])
 }
