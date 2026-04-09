@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState, useCallback } from "react"
+import { useRef, useState, useCallback, useEffect } from "react"
 import { CloudUpload, X, RotateCcw, Upload } from "lucide-react"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -27,6 +27,10 @@ export function FileUpload({
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [error, setError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    onFileSelect?.(selectedFiles)
+  }, [selectedFiles, onFileSelect])
 
   const acceptAttribute = acceptedFormats
     .map((fmt) => {
@@ -78,11 +82,10 @@ export function FileUpload({
       setError(null)
       setSelectedFiles((prev) => {
         const updated = [...prev, ...newFiles]
-        onFileSelect?.(updated)
         return updated
       })
     },
-    [validateFile, onFileSelect],
+    [validateFile],
   )
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -112,15 +115,10 @@ export function FileUpload({
     setError(null)
     if (inputRef.current) inputRef.current.value = ""
     onReset?.()
-    onFileSelect?.([])
   }
 
   const removeFile = (index: number) => {
-    setSelectedFiles((prev) => {
-      const updated = prev.filter((_, i) => i !== index)
-      onFileSelect?.(updated)
-      return updated
-    })
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index))
   }
 
   const formatFileSize = (bytes: number) => {
