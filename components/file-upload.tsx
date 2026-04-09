@@ -1,134 +1,77 @@
 "use client"
 
-import { useRef, useState, useCallback, useEffect } from "react"
 import { CloudUpload, X, RotateCcw, Upload } from "lucide-react"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import type { FileUploadProps } from "@/types/file-upload.types"
+import { useFileUpload } from "@/hooks/use-file-upload"
+import { formatFileSize, getFileCountMessage } from "@/lib/file-formatting"
+import { getAcceptAttribute } from "@/lib/file-mime-types"
+import {
+  DEFAULT_MAX_FILE_SIZE_MB,
+  DEFAULT_ACCEPTED_FORMATS,
+} from "@/constants/file-upload.constants"
 
-export interface FileUploadProps {
-  onFileSelect?: (files: File[]) => void
-  onUpload?: () => void
-  onReset?: () => void
-  maxSize?: number // in MB
-  acceptedFormats?: string[]
-  isLoading?: boolean
-}
-
+/**
+ * Componente de upload de arquivos com suporte a drag-and-drop e múltiplos arquivos
+ * 
+ * Princípios aplicados:
+ * - Single Responsibility: Apenas renderiza a UI, lógica está no hook
+ * - Open/Closed: Extensível via props sem modificar o código
+ * - Dependency Inversion: Depende de abstrações (props/hooks) não de implementações
+ * 
+ * @example
+ * ```tsx
+ * <FileUpload
+ *   onFileSelect={(files) => console.log(files)}
+ *   onUpload={handleUpload}
+ *   maxSize={50}
+ *   acceptedFormats={["PNG", "JPG"]}
+ * />
+ * ```
+ */
 export function FileUpload({
   onFileSelect,
   onUpload,
   onReset,
-  maxSize = 25,
-  acceptedFormats = ["PNG", "JPG", "PDF", "MP4"],
+  maxSize = DEFAULT_MAX_FILE_SIZE_MB,
+  acceptedFormats = DEFAULT_ACCEPTED_FORMATS,
   isLoading = false,
 }: FileUploadProps) {
-  const [isDragging, setIsDragging] = useState(false)
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
-  const [error, setError] = useState<string | null>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const {
+    selectedFiles,
+    error,
+    isDragging,
+    inputRef,
+    removeFile,
+    reset,
+    handleInputChange,
+    handleDrop,
+    handleDragOver,
+    handleDragLeave,
+    openFileSelector,
+  } = useFileUpload({
+    onFileSelect,
+    config: { maxSize, acceptedFormats },
+  })
 
-  useEffect(() => {
-    onFileSelect?.(selectedFiles)
-  }, [selectedFiles, onFileSelect])
+  const acceptAttribute = getAcceptAttribute(acceptedFormats)
+  const hasFiles = selectedFiles.length > 0
+  const hasError = !!error
+  const isUploadDisabled = !hasFiles || hasError || isLoading
 
-  const acceptAttribute = acceptedFormats
-    .map((fmt) => {
-      const map: Record<string, string> = {
-        PNG: "image/png",
-        JPG: "image/jpeg",
-        JPEG: "image/jpeg",
-        PDF: "application/pdf",
-        MP4: "video/mp4",
-      }
-      return map[fmt.toUpperCase()] ?? `.${fmt.toLowerCase()}`
-    })
-    .join(",")
-
-  const validateFile = useCallback(
-    (file: File): string | null => {
-      const ext = file.name.split(".").pop()?.toUpperCase() ?? ""
-      if (!acceptedFormats.map((f) => f.toUpperCase()).includes(ext)) {
-        return `Formato não suportado. Use: ${acceptedFormats.join(", ")}`
-      }
-      if (file.size > maxSize * 1024 * 1024) {
-        return `Arquivo muito grande. Tamanho máximo: ${maxSize}MB`
-      }
-      return null
-    },
-    [acceptedFormats, maxSize],
-  )
-
-  const handleSelect = useCallback(
-    (files: FileList) => {
-      const newFiles: File[] = []
-      let validationError: string | null = null
-
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i]
-        const error = validateFile(file)
-        if (error) {
-          validationError = error
-          break
-        }
-        newFiles.push(file)
-      }
-
-      if (validationError) {
-        setError(validationError)
-        return
-      }
-
-      setError(null)
-      setSelectedFiles((prev) => {
-        const updated = [...prev, ...newFiles]
-        return updated
-      })
-    },
-    [validateFile],
-  )
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
-    if (files && files.length > 0) handleSelect(files)
-  }
-
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    setIsDragging(true)
-  }
-
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    setIsDragging(false)
-  }
-
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    setIsDragging(false)
-    const files = e.dataTransfer.files
-    if (files && files.length > 0) handleSelect(files)
-  }
-
+  /**
+   * Handler combinado de reset que notifica componente pai
+   */
   const handleReset = () => {
-    setSelectedFiles([])
-    setError(null)
-    if (inputRef.current) inputRef.current.value = ""
+    reset()
     onReset?.()
-  }
-
-  const removeFile = (index: number) => {
-    setSelectedFiles((prev) => prev.filter((_, i) => i !== index))
-  }
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes < 1024) return `${bytes} B`
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
   }
 
   return (
     <Card className="w-full max-w-md shadow-sm">
+      {/* Header */}
       <CardHeader className="flex flex-col gap-0.5 pb-3">
         <h2 className="text-base font-semibold leading-tight text-foreground">
           Upload File
@@ -137,13 +80,13 @@ export function FileUpload({
       </CardHeader>
 
       <CardContent className="flex flex-col gap-4">
-        {/* Dropzone */}
+        {/* Dropzone - Área de drag and drop e seleção de arquivos */}
         <div
           role="button"
           tabIndex={0}
           aria-label="Área de upload. Arraste um arquivo ou clique para selecionar."
-          onClick={() => inputRef.current?.click()}
-          onKeyDown={(e) => e.key === "Enter" && inputRef.current?.click()}
+          onClick={openFileSelector}
+          onKeyDown={(e) => e.key === "Enter" && openFileSelector()}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
@@ -152,7 +95,7 @@ export function FileUpload({
             isDragging
               ? "border-primary/50 bg-muted/70"
               : "hover:border-muted-foreground/40 hover:bg-muted/50",
-            selectedFiles.length > 0 && !error && "border-primary/40 bg-muted/30",
+            hasFiles && !hasError && "border-primary/40 bg-muted/30",
           )}
         >
           <input
@@ -172,13 +115,12 @@ export function FileUpload({
               isDragging ? "text-primary" : "text-muted-foreground",
             )}
             strokeWidth={1.5}
+            aria-hidden="true"
           />
 
           <div className="flex flex-col items-center gap-1">
             <p className="text-sm font-medium text-foreground">
-              {selectedFiles.length > 0
-                ? `${selectedFiles.length} arquivo${selectedFiles.length > 1 ? "s" : ""} selecionado${selectedFiles.length > 1 ? "s" : ""}`
-                : "Drag your files here"}
+              {getFileCountMessage(selectedFiles.length)}
             </p>
             <p className="text-xs text-muted-foreground">
               or click to browse
@@ -186,8 +128,8 @@ export function FileUpload({
           </div>
         </div>
 
-        {/* Selected Files List */}
-        {selectedFiles.length > 0 && (
+        {/* Lista de arquivos selecionados */}
+        {hasFiles && (
           <div className="flex flex-col gap-2 rounded-lg border border-border bg-muted/30 p-3">
             {selectedFiles.map((file, index) => (
               <div
@@ -216,19 +158,21 @@ export function FileUpload({
           </div>
         )}
 
-        {/* Validation error */}
-        {error && (
-          <p className="text-xs font-medium text-destructive">{error}</p>
+        {/* Mensagem de erro de validação */}
+        {hasError && (
+          <p className="text-xs font-medium text-destructive" role="alert">
+            {error}
+          </p>
         )}
 
-        {/* Info */}
+        {/* Informações sobre restrições de upload */}
         <div className="flex flex-col gap-1">
           <p className="text-sm text-muted-foreground">
             <span className="font-medium text-foreground">Supported formats:</span>{" "}
-            {acceptedFormats.map((fmt, i) => (
-              <span key={fmt}>
-                <span className="text-primary">{fmt}</span>
-                {i < acceptedFormats.length - 1 && (
+            {acceptedFormats.map((format, index) => (
+              <span key={format}>
+                <span className="text-primary">{format}</span>
+                {index < acceptedFormats.length - 1 && (
                   <span className="text-muted-foreground">, </span>
                 )}
               </span>
@@ -241,30 +185,36 @@ export function FileUpload({
         </div>
       </CardContent>
 
+      {/* Footer com ações */}
       <CardFooter className="flex items-center justify-between pt-2">
         <Button
           variant="ghost"
           onClick={handleReset}
           disabled={isLoading}
           className="gap-2 text-muted-foreground hover:text-foreground"
+          aria-label="Resetar seleção de arquivos"
         >
           <RotateCcw className="h-4 w-4" />
           Reset
         </Button>
         <Button
           onClick={onUpload}
-          disabled={selectedFiles.length === 0 || !!error || isLoading}
+          disabled={isUploadDisabled}
           className="gap-2"
+          aria-label={`Fazer upload de ${selectedFiles.length} arquivo(s)`}
         >
           {isLoading ? (
             <>
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              <span 
+                className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+                aria-hidden="true"
+              />
               Uploading...
             </>
           ) : (
             <>
               <Upload className="h-4 w-4" />
-              Upload {selectedFiles.length > 0 && `(${selectedFiles.length})`}
+              Upload {hasFiles && `(${selectedFiles.length})`}
             </>
           )}
         </Button>
