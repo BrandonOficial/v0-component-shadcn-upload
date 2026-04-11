@@ -35,3 +35,10 @@ pnpm install
 
 # Rode o ambiente de desenvolvimento (Playground)
 pnpm dev
+```
+Acesse http://localhost:3000/sandbox para ver o componente rodando em um formulário real simulando chamadas de API.
+
+### 2. Rodando os Testes (Vitest)
+```bash
+pnpm test
+```
