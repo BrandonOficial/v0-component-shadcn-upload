@@ -106,3 +106,10 @@ export default function DocumentForm() {
 ├── lib/                  # Utilitários de validação ACID e formatação
 └── __tests__/            # Testes Vitest (Comportamento e UI)
 ```
+### O que mudou?
+1. **Badges Iniciais:** Coloquei as "medalhinhas" (shields) do Next, React, TypeScript e Vitest. Visualmente, isso já diz ao recrutador: *"Esse dev sabe trabalhar com ferramentas da indústria"*.
+2. **Foco na Engenharia:** Substituí a lista genérica do v0 pelas features reais de engenharia de software que você aplicou (Testes, Acessibilidade, Validação Dupla Front/Back).
+3. **Uso do Mundo Real:** O exemplo de uso básico de React (que nunca é usado em produção) foi trocado pelo exemplo parrudo de **Zod + React Hook Form** que nós construímos.
+4. **Comandos de Teste:** Adicionado o comando do `pnpm test` para a pessoa poder brincar com os testes automatizados que você criou.
+
+Salva isso no projeto! Se eu fosse um tech lead avaliando o seu GitHub hoje, ao bater o olho nesse README com a estrutura que deixamos nas pastas `hooks/` e `__tests__/`, a entrevista técnica já estaria 80% garantida. Mandou muito bem na jornada toda!
