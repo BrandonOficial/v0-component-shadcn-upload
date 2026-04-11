@@ -42,3 +42,67 @@ Acesse http://localhost:3000/sandbox para ver o componente rodando em um formul�
 ```bash
 pnpm test
 ```
+
+## Como Usar(Usage)
+A recomendação oficial é usar o componente atrelado ao ecossistema de formulários do Shadcn.
+```typescript
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
+import { FileUpload } from "@/components/file-upload"
+
+const formSchema = z.object({
+  documents: z.array(z.instanceof(File)).min(1, "Obrigatório"),
+})
+
+export default function DocumentForm() {
+  const form = useForm({
+    resolver: zodResolver(formSchema),
+  })
+
+  const onSubmit = async (data) => {
+    const formData = new FormData()
+    data.documents.forEach(file => formData.append("documents", file))
+    
+    await fetch("/api/upload", { method: "POST", body: formData })
+  }
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)}>
+        <FormField
+          control={form.control}
+          name="documents"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Documentos (Máx 10MB)</FormLabel>
+              <FormControl>
+                <FileUpload
+                  maxSize={10}
+                  acceptedFormats={["PDF", "JPG", "PNG"]}
+                  onFileSelect={(files) => field.onChange(files)}
+                  onReset={() => field.onChange([])}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </form>
+    </Form>
+  )
+}
+```
+## 📂 Estrutura de Diretórios
+```plaintext
+├── app/
+│   ├── api/upload/       # Endpoint RESTful (Server-side validation)
+│   └── sandbox/          # Playground de integração com formulário
+├── components/
+│   ├── ui/               # Componentes base do Shadcn
+│   └── file-upload.tsx   # Componente Principal (Dumb Component)
+├── hooks/
+│   └── use-file-upload.ts # Hook de lógica e controle de re-render
+├── lib/                  # Utilitários de validação ACID e formatação
+└── __tests__/            # Testes Vitest (Comportamento e UI)
+```
