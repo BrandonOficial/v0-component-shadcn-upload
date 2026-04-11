@@ -1,99 +1,37 @@
-# 📤 File Upload Component - shadcn/ui
+# 📤 Advanced File Upload Component - Shadcn UI
 
-Sistema completo de upload de arquivos com drag-and-drop, suporte a múltiplos arquivos, validação e interface moderna construída com Next.js 16 e shadcn/ui.
+![Next.js](https://img.shields.io/badge/Next.js-16+-black?style=for-the-badge&logo=next.js)
+![React](https://img.shields.io/badge/React-19-blue?style=for-the-badge&logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue?style=for-the-badge&logo=typescript)
+![Vitest](https://img.shields.io/badge/Tested_with-Vitest-yellow?style=for-the-badge&logo=vitest)
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [v0](https://v0.app).
+Um componente de upload de arquivos de nível empresarial construído para o ecossistema **Next.js (App Router)** e **Shadcn UI**. 
 
-## ✨ Features
+Focado em Clean Code, esta biblioteca não é apenas visual: ela resolve problemas complexos de re-renderização, fornece validação robusta ponta a ponta (Client e Server) e é totalmente compatível com `react-hook-form` e `zod`.
 
-- ✅ Upload de múltiplos arquivos simultaneamente
-- ✅ Drag-and-drop intuitivo
-- ✅ Validação de formato e tamanho
-- ✅ Preview da lista de arquivos selecionados
-- ✅ Remoção individual de arquivos
-- ✅ Estados de loading e erro
-- ✅ Totalmente acessível (ARIA, teclado)
-- ✅ Responsivo e mobile-friendly
-- ✅ Arquitetura SOLID e Clean Code
+## ✨ Features Premium
 
-## 🏗️ Arquitetura
+- 🛡️ **Arquitetura Blindada:** Implementação do padrão *Latest Ref* para evitar loops infinitos de re-render no React Hook Form.
+- 🧪 **Testado e Aprovado:** Cobertura de testes automatizados de UI e comportamento com **Vitest** e React Testing Library.
+- 🎯 **Integração Perfeita:** Feito para trabalhar nativamente com `zod` e `react-hook-form`.
+- ✅ **Acessibilidade (A11y):** Foco visível (ring), navegação por teclado e suporte a leitores de tela.
+- 🔒 **Validação Dupla:** Regras estritas de tamanho e formato (MIME type) aplicadas tanto no Hook do Front-end quanto na API RESTful do Back-end.
+- 🧩 **100% Extensível (Open/Closed):** Aceita `className` e atributos nativos do HTML via `React.forwardRef`.
 
-O projeto segue os princípios **SOLID** e **Clean Code**:
+## 🏗️ Arquitetura SOLID
 
-- **Single Responsibility**: Cada módulo tem uma responsabilidade única
-- **Open/Closed**: Extensível via props sem modificar código
-- **Liskov Substitution**: Interfaces bem definidas
-- **Interface Segregation**: Interfaces específicas para cada necessidade
-- **Dependency Inversion**: Dependências de abstrações
-
-Veja mais detalhes em [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
-
-## Built with v0
-
-This repository is linked to a [v0](https://v0.app) project. You can continue developing by visiting the link below -- start new chats to make changes, and v0 will push commits directly to this repo. Every merge to `main` will automatically deploy.
-
-[Continue working on v0 →](https://v0.app/chat/projects/prj_MtauhKWJU00DjTYsncHWFEwHQ0oc)
+O projeto foi refatorado seguindo rigorosamente os princípios **SOLID**:
+- **Single Responsibility**: O componente `<FileUpload />` apenas renderiza a UI. A lógica de negócio vive no `useFileUpload` e a validação em utilitários isolados (`lib/file-validation.ts`).
+- **Open/Closed**: Totalmente estilizável via props e classes Tailwind sem precisar alterar o núcleo do componente.
+- **Dependency Inversion**: Componente projetado para injetar regras e não ditar para onde o arquivo vai.
 
 ## 🚀 Getting Started
 
-### Instalação
+### 1. Instalação e Execução
 
 ```bash
-# Instalar dependências
+# Clone o repositório e instale as dependências
 pnpm install
 
-# Rodar servidor de desenvolvimento
+# Rode o ambiente de desenvolvimento (Playground)
 pnpm dev
-```
-
-Abra [http://localhost:3000](http://localhost:3000) no navegador.
-
-### Uso Básico
-
-```tsx
-import { FileUpload } from "@/components/file-upload"
-
-export default function MyPage() {
-  const [files, setFiles] = useState<File[]>([])
-
-  const handleUpload = async () => {
-    // Implementar lógica de upload
-    console.log("Uploading:", files)
-  }
-
-  return (
-    <FileUpload
-      onFileSelect={setFiles}
-      onUpload={handleUpload}
-      maxSize={25}
-      acceptedFormats={["PNG", "JPG", "PDF"]}
-    />
-  )
-}
-```
-
-## 📂 Estrutura do Projeto
-
-```
-├── app/                  # Next.js App Router
-├── components/           # Componentes React
-│   └── file-upload.tsx  # Componente principal
-├── hooks/                # Custom React Hooks
-│   └── use-file-upload.ts
-├── lib/                  # Utilitários
-│   ├── file-validation.ts
-│   ├── file-formatting.ts
-│   └── file-mime-types.ts
-├── types/                # TypeScript types
-└── constants/            # Constantes
-```
-
-## Learn More
-
-To learn more, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-- [v0 Documentation](https://v0.app/docs) - learn about v0 and how to use it.
-
-<a href="https://v0.app/chat/api/kiro/clone/BrandonOficial/v0-component-shadcn-upload" alt="Open in Kiro"><img src="https://pdgvvgmkdvyeydso.public.blob.vercel-storage.com/open%20in%20kiro.svg?sanitize=true" /></a>
