@@ -10,16 +10,20 @@ export default function BasicExample() {
   const [files, setFiles] = useState<File[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
-  const handleUpload = async () => {
+  const handleUpload = async (selected: File[]) => {
     setIsLoading(true)
-    // Simular upload
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    setIsLoading(false)
-    setFiles([])
+    try {
+      const { uploadDocuments } = await import("@/lib/upload-client")
+      await uploadDocuments(selected)
+      setFiles([])
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
     <FileUpload
+      files={files}
       onFileSelect={setFiles}
       onUpload={handleUpload}
       isLoading={isLoading}

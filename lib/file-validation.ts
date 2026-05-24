@@ -6,6 +6,7 @@ import {
   BYTES_PER_MB,
   VALIDATION_ERRORS,
 } from "@/constants/file-upload.constants"
+import { getAllowedMimeTypes } from "@/lib/file-mime-types"
 
 /**
  * Extrai a extensão de um arquivo
@@ -13,7 +14,9 @@ import {
  * @returns Extensão em maiúsculas ou string vazia
  */
 export function getFileExtension(filename: string): string {
-  return filename.split(".").pop()?.toUpperCase() ?? ""
+  const parts = filename.split(".")
+  if (parts.length < 2) return ""
+  return parts.pop()?.toUpperCase() ?? ""
 }
 
 /**
@@ -31,11 +34,27 @@ export function validateFile(
   const extension = getFileExtension(file.name)
   const normalizedFormats = acceptedFormats.map((f) => f.toUpperCase())
 
-  // Validação de formato
+  if (!extension) {
+    return {
+      isValid: false,
+      errorMessage: VALIDATION_ERRORS.UNSUPPORTED_FORMAT(acceptedFormats),
+    }
+  }
+
+  // Validação de extensão
   if (!normalizedFormats.includes(extension)) {
     return {
       isValid: false,
       errorMessage: VALIDATION_ERRORS.UNSUPPORTED_FORMAT(acceptedFormats),
+    }
+  }
+
+  // Validação de MIME type (quando o navegador informa o tipo)
+  const allowedMimes = getAllowedMimeTypes(acceptedFormats)
+  if (file.type && !allowedMimes.includes(file.type)) {
+    return {
+      isValid: false,
+      errorMessage: VALIDATION_ERRORS.INVALID_MIME(acceptedFormats),
     }
   }
 
@@ -59,13 +78,27 @@ export function validateFile(
  * @param files - Lista de arquivos
  * @param acceptedFormats - Formatos aceitos
  * @param maxSizeMB - Tamanho máximo em MB
+ * @param maxFiles - Limite total de arquivos (incluindo os já selecionados)
+ * @param currentCount - Quantidade de arquivos já na seleção
  * @returns Resultado da primeira validação que falhar, ou sucesso
  */
 export function validateFiles(
   files: FileList,
   acceptedFormats: SupportedFileFormat[],
   maxSizeMB: number,
+  maxFiles?: number,
+  currentCount = 0,
 ): FileValidationResult {
+  if (
+    maxFiles !== undefined &&
+    currentCount + files.length > maxFiles
+  ) {
+    return {
+      isValid: false,
+      errorMessage: VALIDATION_ERRORS.TOO_MANY_FILES(maxFiles),
+    }
+  }
+
   for (let i = 0; i < files.length; i++) {
     const result = validateFile(files[i], acceptedFormats, maxSizeMB)
     if (!result.isValid) {

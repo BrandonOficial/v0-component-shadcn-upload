@@ -2,52 +2,38 @@
 
 import { useState, useCallback } from "react"
 import { FileUpload } from "@/components/file-upload"
+import { uploadDocuments } from "@/lib/upload-client"
+import { toast } from "@/hooks/use-toast"
 
-/**
- * Tempo de simulação de upload em milissegundos
- */
-const UPLOAD_SIMULATION_DELAY_MS = 2000
-
-/**
- * Página principal da aplicação de upload de arquivos
- * 
- * Responsabilidades:
- * - Gerenciar estado dos arquivos selecionados
- * - Controlar estado de loading durante upload
- * - Coordenar o fluxo de upload
- */
 export default function Page() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
-  /**
-   * Handler de upload de arquivos
-   * TODO: Implementar lógica real de upload para API/servidor
-   * Atualmente apenas simula um upload com delay
-   */
-  const handleUpload = useCallback(async () => {
-    if (selectedFiles.length === 0) return
+  const handleUpload = useCallback(async (files: File[]) => {
+    if (files.length === 0) return
 
     setIsLoading(true)
 
     try {
-      // TODO: Substituir por chamada real de API
-      // Exemplo: await uploadFiles(selectedFiles)
-      await new Promise((resolve) => setTimeout(resolve, UPLOAD_SIMULATION_DELAY_MS))
-      
-      // Limpar arquivos após sucesso
+      const result = await uploadDocuments(files)
+      toast({
+        title: "Upload concluído",
+        description: result.message,
+      })
       setSelectedFiles([])
     } catch (error) {
-      // TODO: Adicionar tratamento de erro apropriado
-      console.error("Erro ao fazer upload:", error)
+      const message =
+        error instanceof Error ? error.message : "Erro ao fazer upload."
+      toast({
+        variant: "destructive",
+        title: "Falha no envio",
+        description: message,
+      })
     } finally {
       setIsLoading(false)
     }
-  }, [selectedFiles])
+  }, [])
 
-  /**
-   * Handler de reset da seleção
-   */
   const handleReset = useCallback(() => {
     setSelectedFiles([])
   }, [])
@@ -55,6 +41,7 @@ export default function Page() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-muted/40 p-6">
       <FileUpload
+        files={selectedFiles}
         onFileSelect={setSelectedFiles}
         onUpload={handleUpload}
         onReset={handleReset}

@@ -1,0 +1,82 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "shadcn-file-upload",
+  "homepage": "https://github.com/your-org/shadcn-file-upload",
+  "items": [
+    {
+      "name": "file-upload",
+      "type": "registry:block",
+      "title": "File Upload",
+      "description": "Componente de upload com drag-and-drop, validação (extensão + MIME), preview de imagens, modo controlado e integração com react-hook-form.",
+      "registryDependencies": ["button", "card"],
+      "files": [
+        {
+          "path": "components/file-upload.tsx",
+          "type": "registry:component"
+        },
+        {
+          "path": "hooks/use-file-upload.ts",
+          "type": "registry:hook"
+        },
+        {
+          "path": "hooks/use-file-previews.ts",
+          "type": "registry:hook"
+        },
+        {
+          "path": "lib/file-validation.ts",
+          "type": "registry:lib"
+        },
+        {
+          "path": "lib/file-formatting.ts",
+          "type": "registry:lib"
+        },
+        {
+          "path": "lib/file-mime-types.ts",
+          "type": "registry:lib"
+        },
+        {
+          "path": "lib/file-signatures.ts",
+          "type": "registry:lib"
+        },
+        {
+          "path": "constants/file-upload.constants.ts",
+          "type": "registry:lib"
+        },
+        {
+          "path": "types/file-upload.types.ts",
+          "type": "registry:lib"
+        }
+      ]
+    },
+    {
+      "name": "file-upload-api",
+      "type": "registry:block",
+      "title": "File Upload API",
+      "description": "Route handler Next.js (POST /api/upload), validação server-side com magic bytes, storage em public/uploads e cliente HTTP uploadDocuments.",
+      "registryDependencies": ["file-upload"],
+      "files": [
+        {
+          "path": "app/api/upload/route.ts",
+          "type": "registry:file",
+          "target": "app/api/upload/route.ts"
+        },
+        {
+          "path": "lib/upload-client.ts",
+          "type": "registry:lib"
+        },
+        {
+          "path": "lib/server/upload-validation.ts",
+          "type": "registry:lib"
+        },
+        {
+          "path": "lib/server/upload-storage.ts",
+          "type": "registry:lib"
+        },
+        {
+          "path": "constants/upload-api.constants.ts",
+          "type": "registry:lib"
+        }
+      ]
+    }
+  ]
+}

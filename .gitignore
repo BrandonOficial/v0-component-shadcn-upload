@@ -14,3 +14,13 @@ next.user-config.*
 node_modules
 .next/
 .DS_Store
+
+# Ficheiros enviados pela API de demo
+/public/uploads/*
+!/public/uploads/.gitkeep
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/

@@ -25,7 +25,7 @@ export function formatFileSize(bytes: number): string {
  * @returns Mensagem formatada
  */
 export function getFileCountMessage(count: number): string {
-  if (count === 0) return "Drag your files here"
+  if (count === 0) return "Arraste os arquivos aqui"
   if (count === 1) return "1 arquivo selecionado"
   return `${count} arquivos selecionados`
 }

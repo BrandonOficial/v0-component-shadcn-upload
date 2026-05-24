@@ -14,3 +14,15 @@ export function getAcceptAttribute(formats: SupportedFileFormat[]): string {
     })
     .join(",")
 }
+
+/**
+ * Retorna MIME types permitidos para os formatos aceitos
+ */
+export function getAllowedMimeTypes(
+  formats: SupportedFileFormat[],
+): string[] {
+  const mimes = formats.map(
+    (format) => FILE_FORMAT_MIME_MAP[format.toUpperCase()],
+  )
+  return [...new Set(mimes.filter(Boolean))]
+}

@@ -1,108 +1,169 @@
-# 📤 Advanced File Upload Component - Shadcn UI
+# File Upload — Componente Shadcn UI
 
 ![Next.js](https://img.shields.io/badge/Next.js-16+-black?style=for-the-badge&logo=next.js)
 ![React](https://img.shields.io/badge/React-19-blue?style=for-the-badge&logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue?style=for-the-badge&logo=typescript)
 ![Vitest](https://img.shields.io/badge/Tested_with-Vitest-yellow?style=for-the-badge&logo=vitest)
 
-Um componente de upload de arquivos de nível empresarial construído para o ecossistema **Next.js (App Router)** e **Shadcn UI**. 
+Componente de upload de arquivos para **Next.js (App Router)** e **Shadcn UI**, com validação no cliente e no servidor, preview de imagens e API de exemplo.
 
-Focado em Clean Code, esta biblioteca não é apenas visual: ela resolve problemas complexos de re-renderização, fornece validação robusta ponta a ponta (Client e Server) e é totalmente compatível com `react-hook-form` e `zod`.
+## Funcionalidades
 
-## ✨ Features Premium
+- Modo **controlado** (`files` + `onFileSelect`) — ideal para React Hook Form
+- Validação por **extensão**, **MIME** e **magic bytes** (servidor)
+- **Preview** de imagens na lista de ficheiros
+- **Drag-and-drop** estável (sem flicker)
+- Props: `maxSize`, `maxFiles`, `acceptedFormats`, `labels`, `showUploadButton`, `showPreview`
+- Callback `onUpload(files)` para integrar com a tua API
+- Cliente HTTP: `uploadDocuments()` em `lib/upload-client.ts`
+- API demo: `POST /api/upload` → grava em `public/uploads/`
 
-- 🛡️ **Arquitetura Blindada:** Implementação do padrão *Latest Ref* para evitar loops infinitos de re-render no React Hook Form.
-- 🧪 **Testado e Aprovado:** Cobertura de testes automatizados de UI e comportamento com **Vitest** e React Testing Library.
-- 🎯 **Integração Perfeita:** Feito para trabalhar nativamente com `zod` e `react-hook-form`.
-- ✅ **Acessibilidade (A11y):** Foco visível (ring), navegação por teclado e suporte a leitores de tela.
-- 🔒 **Validação Dupla:** Regras estritas de tamanho e formato (MIME type) aplicadas tanto no Hook do Front-end quanto na API RESTful do Back-end.
-- 🧩 **100% Extensível (Open/Closed):** Aceita `className` e atributos nativos do HTML via `React.forwardRef`.
-
-## 🏗️ Arquitetura SOLID
-
-O projeto foi refatorado seguindo rigorosamente os princípios **SOLID**:
-- **Single Responsibility**: O componente `<FileUpload />` apenas renderiza a UI. A lógica de negócio vive no `useFileUpload` e a validação em utilitários isolados (`lib/file-validation.ts`).
-- **Open/Closed**: Totalmente estilizável via props e classes Tailwind sem precisar alterar o núcleo do componente.
-- **Dependency Inversion**: Componente projetado para injetar regras e não ditar para onde o arquivo vai.
-
-## 🚀 Getting Started
-
-### 1. Instalação e Execução
+## Início rápido
 
 ```bash
-# Clone o repositório e instale as dependências
 pnpm install
-
-# Rode o ambiente de desenvolvimento (Playground)
 pnpm dev
 ```
-Acesse http://localhost:3000/sandbox para ver o componente rodando em um formulário real simulando chamadas de API.
 
-### 2. Rodando os Testes (Vitest)
+| Rota | Descrição |
+|------|-----------|
+| http://localhost:3000 | Demo com botão Enviar → API |
+| http://localhost:3000/sandbox | Formulário RHF + Zod → API |
+
 ```bash
-pnpm test
+pnpm test          # testes unitários (Vitest)
+pnpm test:e2e      # testes E2E (Playwright)
+pnpm registry:build # gera public/r/*.json para CLI shadcn
+pnpm lint
 ```
 
-## Como Usar(Usage)
-A recomendação oficial é usar o componente atrelado ao ecossistema de formulários do Shadcn.
-```typescript
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
+### Instalar via Shadcn CLI
+
+```bash
+pnpm registry:build && pnpm dev
+# noutro terminal / projeto:
+pnpm dlx shadcn@latest add @file-upload/file-upload
+```
+
+Ver [docs/REGISTRY.md](docs/REGISTRY.md).
+
+## Uso do componente
+
+### Controlado (recomendado)
+
+```tsx
+import { useState } from "react"
 import { FileUpload } from "@/components/file-upload"
 
-const formSchema = z.object({
-  documents: z.array(z.instanceof(File)).min(1, "Obrigatório"),
-})
-
-export default function DocumentForm() {
-  const form = useForm({
-    resolver: zodResolver(formSchema),
-  })
-
-  const onSubmit = async (data) => {
-    const formData = new FormData()
-    data.documents.forEach(file => formData.append("documents", file))
-    
-    await fetch("/api/upload", { method: "POST", body: formData })
-  }
+export function MyForm() {
+  const [files, setFiles] = useState<File[]>([])
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
-        <FormField
-          control={form.control}
-          name="documents"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Documentos (Máx 10MB)</FormLabel>
-              <FormControl>
-                <FileUpload
-                  maxSize={10}
-                  acceptedFormats={["PDF", "JPG", "PNG"]}
-                  onFileSelect={(files) => field.onChange(files)}
-                  onReset={() => field.onChange([])}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-      </form>
-    </Form>
+    <FileUpload
+      files={files}
+      onFileSelect={setFiles}
+      maxSize={10}
+      maxFiles={5}
+      acceptedFormats={["PDF", "JPG", "PNG"]}
+      onUpload={async (selected) => {
+        // opção A: helper incluído
+        const { uploadDocuments } = await import("@/lib/upload-client")
+        await uploadDocuments(selected)
+        setFiles([])
+      }}
+    />
   )
 }
 ```
-## 📂 Estrutura de Diretórios
-```plaintext
-├── app/
-│   ├── api/upload/       # Endpoint RESTful (Server-side validation)
-│   └── sandbox/          # Playground de integração com formulário
-├── components/
-│   ├── ui/               # Componentes base do Shadcn
-│   └── file-upload.tsx   # Componente Principal (Dumb Component)
-├── hooks/
-│   └── use-file-upload.ts # Hook de lógica e controle de re-render
-├── lib/                  # Utilitários de validação ACID e formatação
-└── __tests__/            # Testes Vitest (Comportamento e UI)
+
+### Com React Hook Form + Zod
+
+```tsx
+<FileUpload
+  files={field.value}
+  onFileSelect={field.onChange}
+  onReset={() => field.onChange([])}
+  showUploadButton={false}
+  maxFiles={5}
+/>
 ```
+
+Ver demo completa em `app/sandbox/page.tsx`.
+
+## API de upload
+
+### `POST /api/upload`
+
+- **Body:** `multipart/form-data`, campo `documents` (repetível)
+- **Limites:** 25MB/ficheiro, 20 ficheiros, formatos PNG/JPG/JPEG/PDF/MP4
+- **Resposta 201:**
+
+```json
+{
+  "message": "Upload realizado com sucesso! 1 arquivo(s) guardado(s).",
+  "files": [
+    {
+      "name": "doc.pdf",
+      "size": 1024,
+      "type": "application/pdf",
+      "url": "/uploads/1730000000000-doc.pdf"
+    }
+  ]
+}
+```
+
+### Cliente
+
+```ts
+import { uploadDocuments } from "@/lib/upload-client"
+
+const result = await uploadDocuments(files)
+console.log(result.files[0].url)
+```
+
+## Props principais
+
+| Prop | Tipo | Descrição |
+|------|------|-----------|
+| `files` | `File[]` | Modo controlado |
+| `onFileSelect` | `(files: File[]) => void` | Notifica alterações |
+| `onUpload` | `(files: File[]) => void \| Promise<void>` | Botão Enviar |
+| `onReset` | `() => void` | Após Limpar |
+| `maxSize` | `number` | MB por ficheiro |
+| `maxFiles` | `number` | Quantidade máxima |
+| `acceptedFormats` | `SupportedFileFormat[]` | PNG, JPG, JPEG, PDF, MP4 |
+| `showUploadButton` | `boolean` | Rodapé (default `true`) |
+| `showPreview` | `boolean` | Miniaturas de imagem (default `true`) |
+| `labels` | `FileUploadLabels` | Textos customizados |
+| `isLoading` | `boolean` | Estado de envio |
+
+## Estrutura
+
+```
+components/file-upload.tsx   # UI
+hooks/use-file-upload.ts     # Estado e drag-and-drop
+hooks/use-file-previews.ts   # URLs de preview
+lib/file-validation.ts       # Validação cliente
+lib/file-signatures.ts       # Magic bytes
+lib/upload-client.ts         # fetch → API
+lib/server/                  # Validação e storage (servidor)
+app/api/upload/route.ts      # Route handler
+public/uploads/              # Ficheiros guardados (gitignored)
+```
+
+## Testes
+
+**Vitest** (`pnpm test`):
+
+- `file-validation`, `file-formatting`, `file-signatures`
+- `use-file-upload`, `file-upload` (UI)
+- `upload-client`, `server-upload-validation`
+
+**Playwright** (`pnpm test:e2e`):
+
+- `e2e/home.spec.ts` — seleção e upload na página principal
+- `e2e/sandbox.spec.ts` — formulário RHF + POST `/api/upload`
+
+## Licença
+
+Projeto de estudo / portfolio. Usa e adapta livremente no teu projeto Shadcn.

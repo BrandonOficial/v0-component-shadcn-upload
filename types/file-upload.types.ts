@@ -10,14 +10,39 @@ export interface FileValidationResult {
 export interface FileUploadConfig {
   maxSize: number
   acceptedFormats: SupportedFileFormat[]
+  maxFiles?: number
 }
 
-// Estendendo os atributos de Div nativa
-export interface FileUploadProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "onDrop"> {
+export interface FileUploadLabels {
+  title?: string
+  description?: string
+  dropHint?: string
+  browseHint?: string
+  supportedFormats?: string
+  maxSize?: string
+  clear?: string
+  upload?: string
+  uploading?: string
+}
+
+export interface FileUploadHandle {
+  reset: () => void
+}
+
+export interface FileUploadProps
+  extends Omit<React.HTMLAttributes<HTMLDivElement>, "onDrop"> {
+  /** Modo controlado: lista de arquivos gerenciada pelo pai */
+  files?: File[]
   onFileSelect?: (files: File[]) => void
-  onUpload?: () => void
+  onUpload?: (files: File[]) => void | Promise<void>
   onReset?: () => void
   maxSize?: number
+  maxFiles?: number
   acceptedFormats?: SupportedFileFormat[]
   isLoading?: boolean
+  /** Exibe o botão "Enviar" no rodapé do card (padrão: true) */
+  showUploadButton?: boolean
+  /** Miniatura para ficheiros de imagem (padrão: true) */
+  showPreview?: boolean
+  labels?: FileUploadLabels
 }

@@ -5,8 +5,10 @@ import tsconfigPaths from "vite-tsconfig-paths";
 export default defineConfig({
   plugins: [react(), tsconfigPaths()],
   test: {
-    environment: "jsdom", // Simula um navegador no terminal
-    globals: true, // Permite usar describe/test/expect sem importar toda hora
+    environment: "jsdom",
+    globals: true,
     setupFiles: ["./vitest.setup.ts"],
+    pool: "threads",
+    testTimeout: 15_000,
   },
 });

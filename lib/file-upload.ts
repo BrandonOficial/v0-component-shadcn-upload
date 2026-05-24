@@ -17,7 +17,10 @@ export {
 export { formatFileSize, getFileCountMessage } from "./file-formatting"
 
 // MIME Types
-export { getAcceptAttribute } from "./file-mime-types"
+export { getAcceptAttribute, getAllowedMimeTypes } from "./file-mime-types"
+export { sniffMimeType, isMimeAllowedForFormats } from "./file-signatures"
+export { uploadDocuments } from "./upload-client"
+export type { UploadApiResponse, UploadedFileMeta } from "./upload-client"
 
 // Re-export de constantes
 export {
@@ -35,4 +38,6 @@ export type {
   FileValidationResult,
   FileUploadConfig,
   FileUploadProps,
+  FileUploadLabels,
+  FileUploadHandle,
 } from "@/types/file-upload.types"

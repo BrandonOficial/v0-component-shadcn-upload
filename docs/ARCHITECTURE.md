@@ -1,177 +1,112 @@
 # Arquitetura do Projeto - File Upload
 
+> **Objetivo do repositório:** componente `FileUpload` para Shadcn/React + API de exemplo. O consumidor pode usar `uploadDocuments()` ou a própria API.
+
 ## 📁 Estrutura de Pastas
 
 ```
-├── app/                      # Next.js App Router
-│   ├── page.tsx             # Página principal
-│   ├── layout.tsx           # Layout raiz
-│   └── globals.css          # Estilos globais
-│
-├── components/              # Componentes React
-│   ├── file-upload.tsx     # Componente principal de upload
-│   └── ui/                 # Componentes UI shadcn/ui
-│
-├── hooks/                   # Custom React Hooks
-│   └── use-file-upload.ts  # Lógica de upload de arquivos
-│
-├── lib/                     # Utilitários e helpers
-│   ├── utils.ts            # Utilitários gerais
-│   ├── file-validation.ts  # Validação de arquivos
-│   ├── file-formatting.ts  # Formatação de dados
-│   └── file-mime-types.ts  # Helpers de MIME types
-│
-├── types/                   # Definições TypeScript
-│   └── file-upload.types.ts # Tipos do sistema de upload
-│
-└── constants/               # Constantes da aplicação
-    └── file-upload.constants.ts # Constantes de upload
+├── components/
+│   ├── file-upload.tsx     # Componente principal (UI)
+│   └── ui/                 # Primitivos shadcn/ui
+├── hooks/
+│   └── use-file-upload.ts  # Estado, drag-and-drop, validação
+├── lib/
+│   ├── file-validation.ts  # Extensão + MIME + tamanho + maxFiles
+│   ├── file-formatting.ts  # Tamanho legível, mensagens
+│   └── file-mime-types.ts  # accept attribute, MIME permitidos
+├── types/
+│   └── file-upload.types.ts
+├── constants/
+│   └── file-upload.constants.ts
+├── app/
+│   ├── api/upload/         # POST multipart → public/uploads
+│   ├── page.tsx            # Demo simples (controlado + API)
+│   └── sandbox/            # Demo com react-hook-form + zod + API
+└── __tests__/              # Vitest
 ```
-
-## 🎯 Princípios SOLID Aplicados
-
-### 1. **Single Responsibility Principle (SRP)**
-Cada módulo tem uma única responsabilidade:
-
-- **`file-upload.tsx`**: Apenas renderização da UI
-- **`use-file-upload.ts`**: Lógica de estado e handlers
-- **`file-validation.ts`**: Validação de arquivos
-- **`file-formatting.ts`**: Formatação de dados
-- **`file-mime-types.ts`**: Conversão de tipos MIME
-
-### 2. **Open/Closed Principle (OCP)**
-O componente é aberto para extensão, fechado para modificação:
-
-- Props configuráveis (`maxSize`, `acceptedFormats`)
-- Callbacks opcionais (`onFileSelect`, `onUpload`, `onReset`)
-- Estilos personalizáveis via Tailwind CSS
-
-### 3. **Liskov Substitution Principle (LSP)**
-Interfaces bem definidas permitem substituição:
-
-- `FileUploadProps` define contrato claro
-- `FileValidationResult` retorna estrutura consistente
-- Funções puras retornam valores previsíveis
-
-### 4. **Interface Segregation Principle (ISP)**
-Interfaces específicas para cada necessidade:
-
-- `FileUploadProps`: Props do componente
-- `FileUploadConfig`: Configuração isolada
-- `FileValidationResult`: Resultado de validação
-
-### 5. **Dependency Inversion Principle (DIP)**
-Dependências de abstrações, não implementações:
-
-- Componente depende de props/callbacks
-- Hook depende de funções utilitárias
-- Validação independente de UI
-
-## 🧩 Clean Code - Boas Práticas
-
-### Nomenclatura
-✅ **Variáveis e funções**: camelCase descritivo
-```typescript
-const selectedFiles: File[]
-const handleUpload = () => {}
-```
-
-✅ **Tipos e interfaces**: PascalCase com sufixo descritivo
-```typescript
-interface FileUploadProps
-type SupportedFileFormat
-```
-
-✅ **Constantes**: UPPER_SNAKE_CASE
-```typescript
-const DEFAULT_MAX_FILE_SIZE_MB = 25
-const BYTES_PER_MB = 1024 * 1024
-```
-
-✅ **Componentes**: PascalCase
-```typescript
-export function FileUpload() {}
-```
-
-### Funções Puras
-Funções sem side effects quando possível:
-```typescript
-export function formatFileSize(bytes: number): string
-export function validateFile(file: File, ...): FileValidationResult
-```
-
-### Comentários JSDoc
-Documentação clara para APIs públicas:
-```typescript
-/**
- * Valida se um arquivo está dentro dos critérios estabelecidos
- * @param file - Arquivo a ser validado
- * @param acceptedFormats - Formatos aceitos
- * @param maxSizeMB - Tamanho máximo em MB
- * @returns Resultado da validação
- */
-```
-
-### Separação de Concerns
-- **UI**: Componentes React
-- **Lógica**: Custom hooks
-- **Validação**: Funções puras em lib/
-- **Tipos**: Arquivos .types.ts
-- **Constantes**: Arquivos .constants.ts
 
 ## 🔄 Fluxo de Dados
 
 ```
-User Action
+User Action (click / drag / input)
     ↓
-FileUpload Component (UI)
+FileUpload (UI)
     ↓
-useFileUpload Hook (State + Logic)
+useFileUpload (estado controlado ou interno)
     ↓
-Validation Functions (Pure)
+validateFiles (lib pura)
     ↓
-State Update
+onFileSelect(files)  →  app pai (RHF, useState, etc.)
     ↓
-Callback to Parent (onFileSelect)
+onUpload?(files)     →  uploadDocuments() ou API custom
+    ↓
+POST /api/upload     →  validateServerFile + saveUploadedFiles
 ```
 
-## ✨ Melhorias Futuras Sugeridas
+### Modo controlado (recomendado)
 
-### Backend Integration
-- [ ] Criar serviço de upload (`/lib/services/upload-service.ts`)
-- [ ] Implementar API route (`/app/api/upload/route.ts`)
-- [ ] Adicionar progress tracking
-- [ ] Implementar retry logic
+```tsx
+<FileUpload
+  files={files}
+  onFileSelect={setFiles}
+  onUpload={(selected) => { /* tua API aqui */ }}
+/>
+```
 
-### UX Enhancements
-- [ ] Preview de imagens antes do upload
-- [ ] Barra de progresso por arquivo
-- [ ] Suporte a upload em chunks
-- [ ] Cancelamento de uploads em progresso
+## ✅ Implementado
 
-### Validação Avançada
-- [ ] Validação de tipo MIME real (não só extensão)
-- [ ] Scan de vírus/malware
-- [ ] Validação de dimensões de imagem
-- [ ] Compressão automática de imagens grandes
+- Modo controlado via prop `files`
+- `maxFiles`, `maxSize`, `acceptedFormats`
+- Validação por extensão e MIME (`file.type`)
+- Drag-and-drop com contador (evita flicker em filhos)
+- `showUploadButton`, `showPreview`, `labels`, `onUpload(files[])`
+- API demo com magic bytes e `public/uploads/`
+- `lib/upload-client.ts`
+- `forwardRef` no `Card` e no `FileUpload`
+- A11y: teclado (Enter/Espaço), `aria-live` na lista, `role="alert"` em erros
+
+## 🧪 Testes (Vitest)
+
+| Arquivo | Cobertura |
+|---------|-----------|
+| `file-validation.test.ts` | Extensão, MIME, tamanho, maxFiles |
+| `file-formatting.test.ts` | formatFileSize, getFileCountMessage |
+| `use-file-upload.test.tsx` | Controlado/não controlado, erro, maxFiles, drag counter |
+| `file-upload.test.tsx` | UI, labels, onUpload, onReset, erro visível |
+
+```bash
+pnpm test
+```
+
+## ✨ Melhorias futuras (opcionais)
+
+### UX
+- [ ] Preview de imagens
+- [ ] Barra de progresso (prop `onProgress`)
+- [ ] Upload em chunks (fora do escopo do componente base)
+
+### Validação
+- [ ] Leitura de magic bytes no cliente (quando `file.type` vazio)
+- [ ] Dimensões máximas de imagem
+
+### Distribuição
+- [ ] Registry shadcn (`components/ui/file-upload.tsx`)
+- [ ] Pacote npm publicável
 
 ### Testes
-- [ ] Unit tests para validação
-- [ ] Unit tests para formatação
-- [ ] Integration tests para hook
-- [ ] E2E tests para componente
+- [x] E2E com Playwright (`e2e/home.spec.ts`, `e2e/sandbox.spec.ts`)
+
+### Distribuição
+- [x] Registry Shadcn (`registry.json` → `pnpm registry:build` → `public/r/`)
+- [ ] Pacote npm publicável
 
 ### Acessibilidade
-- [x] ARIA labels implementados
-- [x] Navegação por teclado
-- [ ] Anúncios de screen reader para uploads
-- [ ] Modo de alto contraste
+- [x] ARIA labels, teclado, aria-live na lista
+- [ ] Região de status dedicada para leitores de tela após cada seleção
 
-## 📚 Tecnologias Utilizadas
+## 📚 Stack
 
-- **Next.js 16**: Framework React
-- **TypeScript**: Type safety
-- **Tailwind CSS v4**: Estilização
-- **shadcn/ui**: Componentes UI
-- **Radix UI**: Primitivos acessíveis
-- **Lucide React**: Ícones
+- Next.js 16 (demos)
+- React 19 + TypeScript
+- Tailwind CSS v4 + shadcn/ui
+- Vitest + React Testing Library

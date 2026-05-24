@@ -16,13 +16,15 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { toast } from "@/hooks/use-toast";
+import { uploadDocuments } from "@/lib/upload-client";
 
-// 1. Nosso contrato de dados (Zod Schema)
+const MAX_DOCUMENTS = 5;
+
 const formSchema = z.object({
   documents: z
     .array(z.instanceof(File))
     .min(1, "É obrigatório enviar pelo menos um documento.")
-    .max(5, "Podes enviar no máximo 5 documentos."),
+    .max(MAX_DOCUMENTS, "Podes enviar no máximo 5 documentos."),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -30,7 +32,6 @@ type FormValues = z.infer<typeof formSchema>;
 export default function SandboxPage() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  // 2. Inicializar o formulário
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -42,38 +43,19 @@ export default function SandboxPage() {
     setIsSubmitting(true);
 
     try {
-      // 1. Monta o pacote de dados real para envio HTTP
-      const formData = new FormData();
-      data.documents.forEach((file) => {
-        formData.append("documents", file); // "documents" é a chave que a API procura
-      });
-
-      // 2. Dispara o POST para o nosso próprio Back-end
-      const response = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      const result = await response.json();
-
-      // 3. Valida a resposta REST
-      if (!response.ok) {
-        throw new Error(result.error || "Falha ao contactar a API.");
-      }
-
-      // 4. Sucesso! Mostra o resultado do Back-end na tela
-      console.log("Resposta do Servidor:", result);
+      const result = await uploadDocuments(data.documents);
       toast({
-        title: "Sucesso Absoluto!",
+        title: "Upload concluído",
         description: result.message,
       });
-
-      form.reset();
-    } catch (error: any) {
+      form.reset({ documents: [] });
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : "Erro desconhecido.";
       toast({
         variant: "destructive",
         title: "Erro no envio",
-        description: error.message,
+        description: message,
       });
     } finally {
       setIsSubmitting(false);
@@ -88,7 +70,8 @@ export default function SandboxPage() {
             Playground de Upload
           </h1>
           <p className="text-muted-foreground">
-            Testa o componente de upload num ambiente de formulário real.
+            Componente + react-hook-form + API{" "}
+            <code className="text-xs">/api/upload</code>
           </p>
         </div>
 
@@ -103,15 +86,20 @@ export default function SandboxPage() {
                   <FormControl>
                     <FileUpload
                       className="border-primary/20"
+                      files={field.value}
                       maxSize={10}
+                      maxFiles={MAX_DOCUMENTS}
                       acceptedFormats={["PDF", "JPG", "PNG"]}
                       isLoading={isSubmitting}
-                      onFileSelect={(files) => field.onChange(files)}
+                      showUploadButton={false}
+                      onFileSelect={field.onChange}
                       onReset={() => field.onChange([])}
                     />
                   </FormControl>
                   <FormDescription>
-                    Faz o upload do teu CC ou Passaporte (Máx 10MB).
+                    Faz o upload do teu CC ou Passaporte (Máx 10MB, até 5
+                    ficheiros). Os ficheiros são guardados em{" "}
+                    <code className="text-xs">public/uploads</code>.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -119,7 +107,7 @@ export default function SandboxPage() {
             />
 
             <Button type="submit" disabled={isSubmitting} className="w-full">
-              {isSubmitting ? "A processar..." : "Salvar e Enviar"}
+              {isSubmitting ? "A enviar..." : "Enviar para API"}
             </Button>
           </form>
         </Form>
