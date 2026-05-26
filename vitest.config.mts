@@ -10,5 +10,6 @@ export default defineConfig({
     setupFiles: ["./vitest.setup.ts"],
     pool: "threads",
     testTimeout: 15_000,
+    exclude: ["**/node_modules/**", "**/e2e/**", "**/.next/**"],
   },
 });
